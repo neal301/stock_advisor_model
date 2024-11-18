@@ -1,13 +1,21 @@
 from edgar import *
 import time
+from edgar import set_identity
+import re
 
 
 class EdgarRetriever:
-
-    def __init__(self, companies: List[str], years_back: int):
+    def __init__(self, companies: List[str], years_back: int, credentials: str = None):
         self.companies = companies
         self.years_back = years_back
         self.sleep_time = 0.1
+
+        if self._is_valid(credentials):
+            set_identity(credentials)
+            print("Identity successfully set")
+        else:
+            raise ValueError("Invalid credentials format, credentials must be formatted as 'firstname lastname email@domain.com'")
+        
         self.section_patterns = {
             'risk factors': {
                 'start': r"item 1a.\s*risk factors",
@@ -19,19 +27,27 @@ class EdgarRetriever:
                 }
         }
 
-    def _get_filings(self):
+    @staticmethod
+    def _is_valid(credentials: str) -> bool:
+        validpattern = r"[A-Za-z]+\s[A-Za-z]+\s[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+        return bool(re.match(validpattern, credentials))
+
+    def get_filings(self):
         filings = {}
 
         for company in self.companies:
             try:
                 time.sleep(self.sleep_time)
 
-                print("Retrieving filings for company: ", company)
-
                 tenks = Company(company).get_filings(form="10-K").latest(self.years_back)
-                filings[company] = {tenks[i].date: tenks[i].sections() for i in range(len(tenks))}
 
-                print("Retrieved ", len(tenks), " filings for company: ", company)
+                if self.years_back == 1:  # deal with single year case, edgartools returns a single object
+                    filings[company] = {tenks.filing_date: tenks.sections()}
+                else:
+                    filings[company] = {tenks[i].filing_date: tenks[i].sections() for i in range(self.years_back)}
+                
+                for section in self.section_patterns:
+                        
 
             except Exception as e:
                 print("Error retrieving filings for company: ", company)
@@ -39,24 +55,4 @@ class EdgarRetriever:
 
 
 if __name__ == '__main__':
-    try:
-        # Test parameters
-        companies = ['AAPL', 'MSFT', 'GOOGL']
-        years_back = 2
-        
-        # Create instance and retrieve filings
-        print(f"Initializing retriever for {len(companies)} companies, looking back {years_back} years...")
-        retriever = EdgarRetriever(companies, years_back)
-        
-        # Get filings
-        filings = retriever._get_filings()
-        
-        # Print basic results
-        print("\nRetrieval Summary:")
-        for company in filings:
-            print(f"{company}: {len(filings[company])} filings retrieved")
-            for date in filings[company]:
-                print(f"  - Filing date: {date}, Sections: {len(filings[company][date])}")
-                
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+    er = EdgarRetriever(["AAPL"], 1, "Neal Lockhart neal301@gmail.com")
