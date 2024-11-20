@@ -1,8 +1,8 @@
-from edgar import *
+import edgar
 import time
-from edgar import set_identity
 import re
 import pandas as pd
+from typing import List
 
 
 class EdgarRetriever:
@@ -12,7 +12,7 @@ class EdgarRetriever:
         self.sleep_time = 0.1
 
         if self._is_valid(credentials):
-            set_identity(credentials)
+            edgar.set_identity(credentials)
             print("Identity successfully set")
         else:
             raise ValueError("Invalid credentials format, credentials must be formatted as 'firstname lastname email@domain.com'")
@@ -29,24 +29,23 @@ class EdgarRetriever:
         }
 
     @staticmethod
-    def _clean_text(selected_raw_chunk_text: List[str]) -> list:
-        for i in range(len(selected_raw_chunk_text)):
-            selected_raw_chunk_text[i] = selected_raw_chunk_text[i].lower()
-            selected_raw_chunk_text[i] = selected_raw_chunk_text[i].replace("\n"," ")
-            selected_raw_chunk_text[i] = selected_raw_chunk_text[i].replace("•", " ")
-            selected_raw_chunk_text[i] = selected_raw_chunk_text[i].replace("table of contents","")
-            selected_raw_chunk_text[i] = " ".join(selected_raw_chunk_text[i].split())
-        return selected_raw_chunk_text
-
-    @staticmethod
     def _is_valid(credentials: str) -> bool:
         validpattern = r"[A-Za-z]+\s[A-Za-z]+\s[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
         return bool(re.match(validpattern, credentials))
+    
+    @staticmethod
+    def _clean_text(text_line: str) -> str:
+        cleaned_text_line = text_line.lower()
+        cleaned_text_line = cleaned_text_line.replace("\n"," ")
+        cleaned_text_line = cleaned_text_line.replace("•", " ")
+        cleaned_text_line = cleaned_text_line.replace("table of contents","")
+        cleaned_text_line = " ".join(cleaned_text_line.split())
+        return cleaned_text_line
 
     def get_filings(self):
-        companies = []
-        years = []
-        sections = []
+        ticker = []
+        date = []
+        section = []
         text = []
 
         for company in self.companies:
@@ -55,7 +54,7 @@ class EdgarRetriever:
             try:
                 time.sleep(self.sleep_time)
 
-                tenks = Company(company).get_filings(form="10-K").latest(self.years_back)
+                tenks = edgar.Company(company).get_filings(form="10-K").latest(self.years_back)
 
                 if self.years_back == 1:  # deal with single year case, edgartools returns a single object
                     chunked_tenks[tenks.filing_date] = tenks.sections()
@@ -81,17 +80,24 @@ class EdgarRetriever:
 
                         if index_start is not None and index_end is not None:
                             selected_raw_chunk_text = raw_chunked_text[index_start:index_end]
-                            cleaned_chunk_text = self._clean_text(selected_raw_chunk_text)
+
+                            for line in selected_raw_chunk_text:
+                                cleaned_text_line = self._clean_text(line)
+
+                                ticker.append(company)
+                                date.append(year)
+                                section.append(desired_section)
+                                text.append(cleaned_text_line)
                         else:
-                            print("Could not find section: ", desired_section, " for company: ", company, " in year: ", year)
-                        
-
-
-
+                            print("Could not find section: ", desired_section, " for company: ", company, " in year: ", year)                    
             except Exception as e:
                 print("Error retrieving filings for company: ", company)
         
-        return None
+        return pd.DataFrame({"company": ticker,
+                             "date": date,
+                             "section": section,
+                             "text": text
+                             })
 
 
 if __name__ == '__main__':
