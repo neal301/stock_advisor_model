@@ -18,6 +18,10 @@ class EdgarRetriever:
             raise ValueError("Invalid credentials format, credentials must be formatted as 'firstname lastname email@domain.com'")
         
         self.section_patterns = {
+            'business': {
+                'start': r"item 1.\s*business",
+                'end': r"item 1a.\s*risk factors"
+                },
             'risk factors': {
                 'start': r"item 1a.\s*risk factors",
                 'end': r"item 1b.\s*unresolved staff comments"
@@ -101,4 +105,10 @@ class EdgarRetriever:
 
 
 if __name__ == '__main__':
-    er = EdgarRetriever(["AAPL"], 1, "Neal Lockhart neal301@gmail.com")
+
+    er = EdgarRetriever(["S", "CRWD"], 2, "Neal Lockhart neal301@gmail.com") 
+    df = er.get_filings()
+
+    print(df.head())
+    
+    df.to_csv("data/edgar_filings.csv", index=False)
