@@ -106,9 +106,9 @@ class EdgarRetriever:
 
 if __name__ == '__main__':
 
-    er = EdgarRetriever(["S", "CRWD"], 2, "Neal Lockhart neal301@gmail.com") 
+    er = EdgarRetriever(['HUBS', 'SNOW', 'CRWD', 'ZS', 'NET', 'AMD', 'NVDA', 'BASE', 'NOW', 'S'], 2, "Neal Lockhart neal301@gmail.com") 
     df = er.get_filings()
 
     print(df.head())
     
-    df.to_csv("data/edgar_filings.csv", index=False)
+    df.to_csv("../data/edgar_filings.csv", index=False)
