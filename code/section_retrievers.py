@@ -111,4 +111,7 @@ if __name__ == '__main__':
 
     print(df.head())
     
-    df.to_csv("../data/edgar_filings.csv", index=False)
+    #replace non utf-8 characters with blank
+    df['text'] = df['text'].str.encode('utf-8', errors='replace').str.decode('utf-8')
+
+    df.to_csv("../data/edgar_filings2.csv", index=False, sep='|')
