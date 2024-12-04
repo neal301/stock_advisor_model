@@ -50,7 +50,7 @@ class ChromaRetrieverTool:
             
             AttributeInfo(
                 name="company",
-                description="The name of the company",
+                description="This is the stock market ticker for the given company",
                 type="string or list[string]",
             ),
             ]
@@ -91,7 +91,7 @@ options = members + ["FINISH"]
 
 system_prompt = (
     "You are a supervisor tasked with managing a conversation between the"
-    f" following workers: {members}. Given the following user request,"
+    f"following workers: {members}. Given the following user request,"
     " respond with the worker to act next. Each worker will perform a"
     " task and respond with their results and status. When finished,"
     " respond with FINISH. "
